@@ -1,5 +1,5 @@
 {
-  "name": "Sabai Academy",
+  "name": "PRO DIGITAL",
   "description": "A professional online e-learning platform optimized for Cambodian students and content creators with dual English/Khmer support, automated payment verification, student dashboards, and interactive learning trackers.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

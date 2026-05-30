@@ -225,7 +225,7 @@ app.post("/api/auth/login", (req: Request, res: Response) => {
   }
 
   if (user.status === "banned") {
-    return res.status(403).json({ error: "Your account is temporarily banned. Please contact Sabai Academy." });
+    return res.status(403).json({ error: "Your account is temporarily banned. Please contact PRO DIGITAL." });
   }
 
   const passwordHash = hashPassword(password);
@@ -417,7 +417,7 @@ app.post("/api/payments/create", authMiddleware, (req: AuthenticatedRequest, res
 
   // Coupon Logic
   let finalAmount = originalPrice;
-  if (coupon_code && coupon_code.toUpperCase() === "SABAI20") {
+  if (coupon_code && (coupon_code.toUpperCase() === "PRO20" || coupon_code.toUpperCase() === "SABAI20")) {
     finalAmount = finalAmount * 0.8; // Additional 20% off
   } else if (coupon_code && coupon_code.toUpperCase() === "KHMERFREE") {
     finalAmount = 0.0;
@@ -557,6 +557,69 @@ app.post("/api/payments/approve", authMiddleware, adminMiddleware, (req: Authent
   res.json({ message: `Payment successfully marked: ${action}`, order: orderInfo });
 });
 
+// Admin approves or declines multiple transactions in a bulk action
+app.post("/api/payments/bulk-approve", authMiddleware, adminMiddleware, (req: AuthenticatedRequest, res: Response) => {
+  const { transaction_ids, action } = req.body; // transaction_ids: string[], action: "approve" | "decline"
+  if (!transaction_ids || !Array.isArray(transaction_ids) || transaction_ids.length === 0) {
+    return res.status(400).json({ error: "Transaction IDs array is required." });
+  }
+
+  const processed: string[] = [];
+  const errors: string[] = [];
+
+  for (const transaction_id of transaction_ids) {
+    const payInfo = db.getPayments().find(p => p.transaction_id === transaction_id);
+    if (!payInfo) {
+      errors.push(`Payment TRX index not found for: ${transaction_id}`);
+      continue;
+    }
+
+    const orderInfo = db.getOrders().find(o => o.id === payInfo.order_id);
+    if (!orderInfo) {
+      errors.push(`Order details referenced by transactions are purged for: ${transaction_id}`);
+      continue;
+    }
+
+    if (action === "approve") {
+      payInfo.status = "completed";
+      payInfo.verified_at = new Date().toISOString();
+      payInfo.verified_by = req.user!.id;
+      
+      orderInfo.payment_status = "completed";
+
+      // Award bonus learning points to student
+      const student = db.getUsers().find(u => u.id === orderInfo.user_id);
+      if (student) {
+        student.points = (student.points || 0) + 20; // major point milestones!
+        db.saveUser(student);
+      }
+
+      db.savePayment(payInfo);
+      db.saveOrder(orderInfo);
+
+      logActivity(req.user!.email, "Payment Approved (Bulk)", `Approved and unlocked TRX: ${transaction_id}`);
+      
+      sendTelegramNotification(
+        `✅ <b>Payment Approved & Verified! (Bulk)</b>\n` +
+        `💳 TRX: <code>${transaction_id}</code>\n` +
+        `👤 User ID: <code>${orderInfo.user_id}</code>\n` +
+        `🍀 Course is now fully unlocked for student studying!`
+      );
+    } else {
+      payInfo.status = "failed";
+      orderInfo.payment_status = "refunded";
+      
+      db.savePayment(payInfo);
+      db.saveOrder(orderInfo);
+
+      logActivity(req.user!.email, "Payment Declined (Bulk)", `Declined or marked failed TRX: ${transaction_id}`);
+    }
+    processed.push(transaction_id);
+  }
+
+  res.json({ message: `Bulk action completed. Verified: ${processed.length}, Errors: ${errors.length}`, processed, errors });
+});
+
 app.get("/api/payments/transactions", authMiddleware, (req: AuthenticatedRequest, res: Response) => {
   if (req.user!.role === "admin") {
     // Admin receives all transaction records
@@ -570,6 +633,8 @@ app.get("/api/payments/transactions", authMiddleware, (req: AuthenticatedRequest
         user_name: user?.name || "Unknown Student",
         user_email: user?.email || "",
         course_title: course?.title || "Unknown Course",
+        course_id: ord?.course_id || "",
+        referral_code: ord?.referral_code || "",
         created_at: ord?.created_at || ""
       };
     });
@@ -653,12 +718,12 @@ app.post("/api/ai/chat", async (req: Request, res: Response) => {
 
   const catalogSummary = db.getCourses().map(c => `- [ID: ${c.id}] ${c.title}, Category: ${c.category}, Price: $${c.price} USD`).join("\n");
 
-  const systemPrompt = `You are "Kru Sabai", the primary Khmer & English dynamic AI tutor of Sabai Academy LMS, an elite online academy in Cambodia.
+  const systemPrompt = `You are "Kru Pro", the primary Khmer & English dynamic AI tutor of PRO DIGITAL LMS, an elite online academy in Cambodia.
 Your target is to answer the user's queries in an extremely friendly, helpful, and highly professional manner.
 When they ask about writing code, programming, careers, or marketing study paths, guide them perfectly with concrete coding snippets styled beautifully in markdown.
 Incorporate polite Khmer greeting phrases (like 'សួស្តី! (Suostei)') or encouragement phrases where natural to maintain beautiful local identity, and use fully readable Unicode.
 
-Currently, Sabai Academy offers the following active courses. Always recommend and reference these to help conversion if relevant:
+Currently, PRO DIGITAL offers the following active courses. Always recommend and reference these to help conversion if relevant:
 ${catalogSummary}
 
 Provide a comprehensive, high-quality response.`;
@@ -684,9 +749,9 @@ Provide a comprehensive, high-quality response.`;
 
   // Pure Local Simulator Fallback - exceptionally smart and context aware
   const lowercase = message.toLowerCase();
-  let fallbackReply = "សួស្តី! (Suostei!) I am Kru Sabai, your learning partner. I am happy to guide you! ";
+  let fallbackReply = "សួស្តី! (Suostei!) I am Kru Pro, your learning partner. I am happy to guide you! ";
   if (lowercase.includes("react") || lowercase.includes("web") || lowercase.includes("next")) {
-    fallbackReply += "\n\nI highly recommend our <b>Next.js 15 & React Fullstack Mastery</b> class! It includes 18 full hours of lessons, curriculum tasks, and templates to start developing your career today. Would you like a coupon? Try typing 'SABAI20' during purchase for 20% savings.";
+    fallbackReply += "\n\nI highly recommend our <b>Next.js 15 & React Fullstack Mastery</b> class! It includes 18 full hours of lessons, curriculum tasks, and templates to start developing your career today. Would you like a coupon? Try typing 'PRO20' during purchase for 20% savings.";
   } else if (lowercase.includes("marketing") || lowercase.includes("sale") || lowercase.includes("business")) {
     fallbackReply += "\n\nTo build revenue, checkout our <b>AI Tools & Digital Marketing</b> class. You will master digital funnel systems tailored precisely for Cambodian SMEs, integrating ABA QR codes and Facebook chat bots.";
   } else {
@@ -850,7 +915,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Sabai LMS] Server operational on interface http://0.0.0.0:${PORT}`);
+    console.log(`[PRO DIGITAL LMS] Server operational on interface http://0.0.0.0:${PORT}`);
   });
 }
 

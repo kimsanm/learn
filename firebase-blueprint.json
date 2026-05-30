@@ -1,0 +1,147 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account and profile within the Sabai Academy LMS.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "passwordHash": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
+        "status": { "type": "string", "enum": ["active", "banned"] },
+        "points": { "type": "integer" },
+        "bio": { "type": "string" },
+        "joined_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "email", "passwordHash", "role", "status", "points", "joined_at"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "An educational course structure",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "discount": { "type": "number" },
+        "category": { "type": "string" },
+        "tags": { "type": "array" },
+        "instructor": { "type": "string" },
+        "duration": { "type": "string" },
+        "rating": { "type": "number" },
+        "thumbnail": { "type": "string" },
+        "intro_video": { "type": "string" }
+      },
+      "required": ["id", "title", "slug", "description", "price", "discount", "category", "instructor", "duration", "rating", "thumbnail"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "A lecture, video, or study module belonging to a specific course",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "course_id": { "type": "string" },
+        "title": { "type": "string" },
+        "video_url": { "type": "string" },
+        "attachments": { "type": "array" },
+        "order": { "type": "integer" },
+        "details": { "type": "string" },
+        "quiz": { "type": "array" }
+      },
+      "required": ["id", "course_id", "title", "video_url", "attachments", "order", "details"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A payment enrollment purchase order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "course_id": { "type": "string" },
+        "amount": { "type": "number" },
+        "payment_method": { "type": "string" },
+        "payment_status": { "type": "string", "enum": ["pending", "completed", "refunded"] },
+        "referral_code": { "type": "string" },
+        "transaction_id": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "user_id", "course_id", "amount", "payment_method", "payment_status", "transaction_id", "created_at"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Transaction details and receipt uploads for billing auditing",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "order_id": { "type": "string" },
+        "amount": { "type": "number" },
+        "transaction_id": { "type": "string" },
+        "payment_method": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed", "failed"] },
+        "screenshot_url": { "type": "string" },
+        "verified_at": { "type": "string" },
+        "verified_by": { "type": "string" }
+      },
+      "required": ["id", "order_id", "amount", "transaction_id", "payment_method", "status"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "LMS administrative system-wide parameters",
+      "type": "object",
+      "properties": {
+        "logo_url": { "type": "string" },
+        "theme": { "type": "string" },
+        "seo_keywords": { "type": "string" },
+        "seo_description": { "type": "string" },
+        "telegram_notifications_enabled": { "type": "boolean" }
+      },
+      "required": ["logo_url", "theme", "seo_keywords", "seo_description", "telegram_notifications_enabled"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "LMS system administrative operation telemetry log",
+      "type": "object",
+      "properties": {
+        "timestamp": { "type": "string" },
+        "user": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["timestamp", "user", "action", "details"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of learning users"
+    },
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Collection of LMS learning modules"
+    },
+    "/lessons/{lessonId}": {
+      "schema": "Lesson",
+      "description": "Course lectures and videos containing syllabus outline"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Student enrollment transaction logs"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Student manual payment screenshots"
+    },
+    "/settings/{settingId}": {
+      "schema": "SystemSettings",
+      "description": "Global configurable theme or search configurations"
+    },
+    "/logs/{logId}": {
+      "schema": "ActivityLog",
+      "description": "Server auditing logs"
+    }
+  }
+}

@@ -29,7 +29,7 @@ export default function App() {
   const [authName, setAuthName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
-  const [authRole, setAuthRole] = useState<"student" | "teacher">("student");
+  const [authRole, setAuthRole] = useState<"student" | "teacher" | "admin">("student");
   const [authError, setAuthError] = useState("");
 
   // Server API states
@@ -222,7 +222,7 @@ export default function App() {
               <Sparkles className="w-5.5 h-5.5 fill-white/10" />
             </div>
             <div>
-              <div className="font-black text-base sm:text-lg tracking-tight leading-none bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Sabai Academy</div>
+              <div className="font-black text-base sm:text-lg tracking-tight leading-none bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">PRO DIGITAL</div>
               <div className="text-[9px] text-slate-400 uppercase tracking-widest leading-none mt-1 font-semibold">{t("khmerLogoSubtitle")}</div>
             </div>
           </div>
@@ -620,24 +620,36 @@ export default function App() {
               {authMode === "register" && (
                 <div className="space-y-1">
                   <label className="text-2xs font-extrabold text-slate-400 uppercase">Select Role</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     <button
                       type="button"
                       onClick={() => setAuthRole("student")}
-                      className={`p-2 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
+                      className={`p-1.5 rounded-xl border font-bold text-[10px] transition-all cursor-pointer ${
                         authRole === 'student' ? 'bg-indigo-500 text-white border-indigo-600 shadow' : 'bg-transparent text-slate-400'
                       }`}
                     >
-                      Student/សិស្ស
+                      Student
+                      <span className="block text-[8px] font-medium opacity-80">សិស្ស</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setAuthRole("teacher")}
-                      className={`p-2 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
+                      className={`p-1.5 rounded-xl border font-bold text-[10px] transition-all cursor-pointer ${
                         authRole === 'teacher' ? 'bg-indigo-500 text-white border-indigo-600 shadow' : 'bg-transparent text-slate-400'
                       }`}
                     >
-                      Instructor/គ្រូ
+                      Instructor
+                      <span className="block text-[8px] font-medium opacity-80">គ្រូ</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuthRole("admin")}
+                      className={`p-1.5 rounded-xl border font-bold text-[10px] transition-all cursor-pointer ${
+                        authRole === 'admin' ? 'bg-indigo-500 text-white border-indigo-600 shadow' : 'bg-transparent text-slate-400'
+                      }`}
+                    >
+                      Admin
+                      <span className="block text-[8px] font-medium opacity-80">អ្នកគ្រប់គ្រង</span>
                     </button>
                   </div>
                 </div>
@@ -688,8 +700,8 @@ export default function App() {
           
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-indigo-500 flex items-center justify-center text-white font-black text-xs">S</div>
-              <span className="font-extrabold text-slate-200 leading-none">Sabai Academy</span>
+              <div className="h-8 w-8 rounded-lg bg-indigo-500 flex items-center justify-center text-white font-black text-xs">P</div>
+              <span className="font-extrabold text-slate-200 leading-none">PRO DIGITAL</span>
             </div>
             <p className="text-xs leading-relaxed font-light">{t("footerQuote")}</p>
           </div>
@@ -722,7 +734,7 @@ export default function App() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-900 text-center text-3xs font-mono text-slate-500">
-          © {new Date().getFullYear()} Sabai Academy LMS. All rights reserved. Registered under Ministry of Education, Youth and Sport in Cambodia.
+          © {new Date().getFullYear()} PRO DIGITAL LMS. All rights reserved. Registered under Ministry of Education, Youth and Sport in Cambodia.
         </div>
       </footer>
 

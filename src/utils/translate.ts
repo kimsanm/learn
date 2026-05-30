@@ -2,7 +2,7 @@ export type Language = "en" | "kh";
 
 export const translations = {
   en: {
-    brand: "Sabai Academy",
+    brand: "PRO DIGITAL",
     tagline: "Unlocking Potential with Modern Digital Skills",
     home: "Home",
     courses: "Courses",
@@ -32,7 +32,7 @@ export const translations = {
     enrollNow: "Enroll Now",
     discount: "Promo discount",
     originalPrice: "Price",
-    inclusiveCoupon: "Coupon (SABAI20 for 20% off):",
+    inclusiveCoupon: "Coupon (PRO20 for 20% off):",
     apply: "Apply",
     couponApplied: "Coupon applied! Enjoy 20% savings.",
     checkoutTitle: "Choose Payment Method",
@@ -72,13 +72,13 @@ export const translations = {
     logsTitle: "LMS Telemetry Activity Logs",
     faqTitle: "Frequently Asked Questions",
     contactUs: "Contact Support",
-    blogTitle: "Sabai Tech Insights",
+    blogTitle: "PRO DIGITAL Tech Insights",
     footerQuote: "Empowering Next-Generation Digital Talents in Cambodia",
     by: "by",
     khmerLogoSubtitle: "ស្ថាបនាអនាគតបច្ចេកវិទ្យា"
   },
   kh: {
-    brand: "សាបាយ អាខាដឺមី (Sabai Academy)",
+    brand: "ប្រូ ឌីជីថល (PRO DIGITAL)",
     tagline: "អភិវឌ្ឍន៍ជំនាញឌីជីថលទំនើប ជាមួយសាស្ត្រាចារ្យជំនាញ",
     home: "ទំព័រដើម",
     courses: "វគ្គសិក្សា",
@@ -108,7 +108,7 @@ export const translations = {
     enrollNow: "ចុះឈ្មោះរៀនភ្លាមៗ",
     discount: "ប្រូម៉ូសិនដកសេវា",
     originalPrice: "តម្លៃដើម",
-    inclusiveCoupon: "លេខកូដបញ្ចុះតម្លៃ (SABAI20 កាត់ ២០%)៖",
+    inclusiveCoupon: "លេខកូដបញ្ចុះតម្លៃ (PRO20 កាត់ ២០%)៖",
     apply: "បញ្ចូល",
     couponApplied: "អនុវត្តកូដជោគជ័យ! ទទួលបានការដកសេវា ២០%។",
     checkoutTitle: "ជ្រើសរើសវិធីសាស្ត្រទូទាត់ប្រាក់",
@@ -148,7 +148,7 @@ export const translations = {
     logsTitle: "ប្រវត្តិសកម្មភាពសរុបក្នុងប្រព័ន្ធ (Telemetry Logs)",
     faqTitle: "សំណួរដែលសួរញឹកញាប់បំផុត",
     contactUs: "ទាក់ទងមកផ្ទាល់",
-    blogTitle: "ស្វែងយល់អត្ថបទបច្ចេកវិទ្យាថ្មីៗ",
+    blogTitle: "អត្ថបទវិភាគបច្ចេកវិទ្យា PRO DIGITAL",
     footerQuote: "ចូលរួមស្ថាបនាធនធានបច្ចេកវិទ្យា និងអ្នកជំនាញជំនាន់ក្រោយក្នុងប្រទេសកម្ពុជា",
     by: "ដោយ",
     khmerLogoSubtitle: "វិទ្យាស្ថានបណ្តុះបណ្តាលបច្ចេកវិទ្យា"

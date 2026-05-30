@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Identity & Access Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'admin@sabaiacademy.com'
+      );
+    }
+
+    // 3. Collection Rules
+    
+    // Users Profile Collection
+    match /users/{userId} {
+      allow read: if true; // Everyone can see public profile details
+      allow create: if (isOwner(userId) && request.resource.data.role == 'student' && request.resource.data.status == 'active') || isAdmin();
+      allow update: if (isOwner(userId) && (request.resource.data.role == resource.data.role) && (request.resource.data.status == resource.data.status)) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Courses Collection
+    match /courses/{courseId} {
+      allow read: if true; // Public listings
+      allow write: if isAdmin();
+    }
+
+    // Lessons Collection
+    match /lessons/{lessonId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Orders Collection
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (resource.data.user_id == request.auth.uid || isAdmin());
+      allow create: if (isSignedIn() && request.resource.data.user_id == request.auth.uid) || isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Payments Collection
+    match /payments/{paymentId} {
+      allow read: if isSignedIn() && (resource.data.verified_by == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() || isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // System Settings Collection
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Telemetry Logs Collection (Admin Only)
+    match /logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

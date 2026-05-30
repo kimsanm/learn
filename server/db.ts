@@ -1,6 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { google } from "googleapis";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc } from "firebase/firestore";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 
 // Define directories for local database fallback
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -277,17 +280,104 @@ const writeLocalFile = <T>(name: string, data: T): void => {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
 };
 
+// --- Firebase Config & Error Handlers ---
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null, userId?: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: userId || null,
+      email: null,
+      emailVerified: null,
+      isAnonymous: null,
+      tenantId: null,
+      providerInfo: []
+    },
+    operationType,
+    path
+  };
+  console.error('[Firestore Error Handled Gracefully]:', JSON.stringify(errInfo));
+}
+
+let firebaseApp: any = null;
+export let firestoreDb: any = null;
+let useFirebase: boolean = false;
+
+try {
+  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+  if (fs.existsSync(configPath)) {
+    const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    firebaseApp = initializeApp(firebaseConfig);
+    firestoreDb = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+    useFirebase = true;
+    console.log("Firebase Firestore initialized successfully as the backend database.");
+  } else {
+    console.log("No firebase-applet-config.json found. Operating without Firebase.");
+  }
+} catch (err) {
+  console.error("Firebase initialization failed:", err);
+}
+
+// Helper to fetch collection
+async function fetchCollection(colName: string): Promise<any[]> {
+  if (!useFirebase || !firestoreDb) return [];
+  try {
+    const querySnapshot = await getDocs(collection(firestoreDb, colName));
+    const list: any[] = [];
+    querySnapshot.forEach((doc) => {
+      list.push({ ...doc.data() });
+    });
+    return list;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, colName);
+    return [];
+  }
+}
+
 // Log activity system
 export const logActivity = (user: string, action: string, details: string) => {
   try {
-    const logs = fs.existsSync(LOG_FILE) ? JSON.parse(fs.readFileSync(LOG_FILE, "utf8")) : [];
-    logs.unshift({
+    const logEntry = {
       timestamp: new Date().toISOString(),
       user,
       action,
       details
-    });
+    };
+    const logs = fs.existsSync(LOG_FILE) ? JSON.parse(fs.readFileSync(LOG_FILE, "utf8")) : [];
+    logs.unshift(logEntry);
     fs.writeFileSync(LOG_FILE, JSON.stringify(logs.slice(0, 100), null, 2), "utf8");
+
+    if (useFirebase && firestoreDb) {
+      const logId = `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      setDoc(doc(firestoreDb, "logs", logId), logEntry).catch((error) => {
+        console.error("Failed to write activity log to Firestore:", error);
+      });
+    }
   } catch (err) {
     console.error("Failed to write to activity log", err);
   }
@@ -341,8 +431,15 @@ class GoogleSheetsDatabase {
       this.useGoogleSheets = false;
     }
 
-    // Always load local cache on startup
+    // Always load local cache first, then asynchronously fetch and seed from Firestore
     this.syncFromLocal();
+    if (useFirebase) {
+      this.syncFromFirestore().then(() => {
+        console.log("Initial Firestore synchronization and seeding completed.");
+      }).catch(err => {
+        console.error("Failed to complete Firestore initial sync & seeding:", err);
+      });
+    }
   }
 
   private syncFromLocal() {
@@ -361,39 +458,154 @@ class GoogleSheetsDatabase {
     }
   }
 
+  private async syncFromFirestore() {
+    if (!useFirebase || !firestoreDb) return;
+    try {
+      // Authenticate server backend with Firebase Auth to gain isAdmin secure privileges
+      try {
+        const authInstance = getAuth(firebaseApp);
+        const email = "admin@sabaiacademy.com";
+        const password = "admin123_secure_password";
+        try {
+          await createUserWithEmailAndPassword(authInstance, email, password);
+          console.log("Admin account successfully bootstrapped in Firebase Auth backend.");
+        } catch (createErr: any) {
+          if (createErr.code === "auth/email-already-in-use" || createErr.code === "auth/email-already-exists") {
+            await signInWithEmailAndPassword(authInstance, email, password);
+            console.log("Admin successfully authenticated and logged in to Firebase Auth backend.");
+          } else {
+            throw createErr;
+          }
+        }
+      } catch (authErr) {
+        console.error("Backend server authentication with Firebase failed:", authErr);
+      }
+
+      console.log("Starting Firestore synchronization...");
+
+      // 1. Settings
+      try {
+        const settingsSnap = await getDocs(collection(firestoreDb, "settings"));
+        let foundSettings = false;
+        settingsSnap.forEach((doc) => {
+          if (doc.id === "system") {
+            this.cachedSettings = doc.data() as SystemSettings;
+            foundSettings = true;
+          }
+        });
+        if (!foundSettings) {
+          await setDoc(doc(firestoreDb, "settings", "system"), DEFAULT_SETTINGS);
+          this.cachedSettings = DEFAULT_SETTINGS;
+        }
+        writeLocalFile("settings", this.cachedSettings);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, "settings/system");
+      }
+
+      // 2. Users
+      const usersList = await fetchCollection("users");
+      if (usersList.length > 0) {
+        this.cachedUsers = usersList;
+      } else {
+        console.log("Seeding DEFAULT_USERS to Firestore...");
+        for (const u of DEFAULT_USERS) {
+          await setDoc(doc(firestoreDb, "users", u.id), u);
+        }
+        this.cachedUsers = DEFAULT_USERS;
+      }
+      writeLocalFile("users", this.cachedUsers);
+
+      // 3. Courses
+      const coursesList = await fetchCollection("courses");
+      if (coursesList.length > 0) {
+        this.cachedCourses = coursesList;
+      } else {
+        console.log("Seeding DEFAULT_COURSES to Firestore...");
+        for (const c of DEFAULT_COURSES) {
+          await setDoc(doc(firestoreDb, "courses", c.id), c);
+        }
+        this.cachedCourses = DEFAULT_COURSES;
+      }
+      writeLocalFile("courses", this.cachedCourses);
+
+      // 4. Lessons
+      const lessonsList = await fetchCollection("lessons");
+      if (lessonsList.length > 0) {
+        this.cachedLessons = lessonsList;
+      } else {
+        console.log("Seeding DEFAULT_LESSONS to Firestore...");
+        for (const l of DEFAULT_LESSONS) {
+          await setDoc(doc(firestoreDb, "lessons", l.id), l);
+        }
+        this.cachedLessons = DEFAULT_LESSONS;
+      }
+      writeLocalFile("lessons", this.cachedLessons);
+
+      // 5. Orders
+      const ordersList = await fetchCollection("orders");
+      if (ordersList.length > 0) {
+        this.cachedOrders = ordersList;
+      } else {
+        console.log("Seeding DEFAULT_ORDERS to Firestore...");
+        for (const o of DEFAULT_ORDERS) {
+          await setDoc(doc(firestoreDb, "orders", o.id), o);
+        }
+        this.cachedOrders = DEFAULT_ORDERS;
+      }
+      writeLocalFile("orders", this.cachedOrders);
+
+      // 6. Payments
+      const paymentsList = await fetchCollection("payments");
+      if (paymentsList.length > 0) {
+        this.cachedPayments = paymentsList;
+      } else {
+        console.log("Seeding DEFAULT_PAYMENTS to Firestore...");
+        for (const p of DEFAULT_PAYMENTS) {
+          await setDoc(doc(firestoreDb, "payments", p.id), p);
+        }
+        this.cachedPayments = DEFAULT_PAYMENTS;
+      }
+      writeLocalFile("payments", this.cachedPayments);
+
+      console.log("Firestore synchronization and seeding complete.");
+    } catch (err) {
+      console.error("Failed to synchronize with Firebase Firestore:", err);
+    }
+  }
+
   // Push local storage contents to Google Sheets to auto-provision empty files
   public async syncToSheets() {
     if (!this.useGoogleSheets || !this.sheetsInstance) return;
     try {
-      // Setup Users Sheet Structure: [id, name, email, passwordHash, role, status, points, bio, joined_at]
+      // Setup Users Sheet Structure
       const usersData = [
         ["id", "name", "email", "passwordHash", "role", "status", "points", "bio", "joined_at"],
         ...this.cachedUsers.map(u => [u.id, u.name, u.email, u.passwordHash, u.role, u.status, u.points.toString(), u.bio || "", u.joined_at])
       ];
       await this.writeSheetData("Users", usersData);
 
-      // Setup Courses Sheet Structure: [id, title, slug, description, price, discount, category, instructor, duration, rating, thumbnail, intro_video]
+      // Setup Courses Sheet Structure
       const coursesData = [
         ["id", "title", "slug", "description", "price", "discount", "category", "instructor", "duration", "rating", "thumbnail", "intro_video"],
         ...this.cachedCourses.map(c => [c.id, c.title, c.slug, c.description, c.price.toString(), c.discount.toString(), c.category, c.instructor, c.duration, c.rating.toString(), c.thumbnail, c.intro_video])
       ];
       await this.writeSheetData("Courses", coursesData);
 
-      // Setup Lessons Sheet Structure: [id, course_id, title, video_url, order, details]
+      // Setup Lessons Sheet Structure
       const lessonsData = [
         ["id", "course_id", "title", "video_url", "order", "details", "quizJSON"],
         ...this.cachedLessons.map(l => [l.id, l.course_id, l.title, l.video_url, l.order.toString(), l.details, JSON.stringify(l.quiz || [])])
       ];
       await this.writeSheetData("Lessons", lessonsData);
 
-      // Setup Orders Sheet Structure: [id, user_id, course_id, amount, payment_method, payment_status, referral_code, transaction_id, created_at]
+      // Setup Orders Sheet Structure
       const ordersData = [
         ["id", "user_id", "course_id", "amount", "payment_method", "payment_status", "referral_code", "transaction_id", "created_at"],
         ...this.cachedOrders.map(o => [o.id, o.user_id, o.course_id, o.amount.toString(), o.payment_method, o.payment_status, o.referral_code || "", o.transaction_id, o.created_at])
       ];
       await this.writeSheetData("Orders", ordersData);
 
-      // Setup Payments Sheet Structure: [id, order_id, amount, transaction_id, payment_method, status, screenshot_url, verified_at, verified_by]
+      // Setup Payments Sheet Structure
       const paymentsData = [
         ["id", "order_id", "amount", "transaction_id", "payment_method", "status", "screenshot_url", "verified_at", "verified_by"],
         ...this.cachedPayments.map(p => [p.id, p.order_id, p.amount.toString(), p.transaction_id, p.payment_method, p.status, p.screenshot_url || "", p.verified_at || "", p.verified_by || ""])
@@ -406,7 +618,7 @@ class GoogleSheetsDatabase {
     }
   }
 
-  // Attempt to sync from sheets (CRUD retrieve override)
+  // Attempt to sync from sheets
   private async syncFromSheetsAsync() {
     if (!this.useGoogleSheets || !this.sheetsInstance) return;
     try {
@@ -514,7 +726,6 @@ class GoogleSheetsDatabase {
       });
       return response.data.values;
     } catch (err: any) {
-      // If worksheet doesn't exist, try creating it automatically
       if (err.message && err.message.includes("Unable to parse range")) {
         console.log(`Sheet "${range}" not found in spreadsheet. Auto-pushing provisioning layout...`);
         this.syncToSheets();
@@ -525,7 +736,6 @@ class GoogleSheetsDatabase {
 
   private async writeSheetData(range: string, values: any[][]) {
     try {
-      // We overwrite the entire range or appends
       await this.sheetsInstance.spreadsheets.values.update({
         spreadsheetId: this.spreadsheetId,
         range: `${range}!A1`,
@@ -556,12 +766,26 @@ class GoogleSheetsDatabase {
       this.cachedUsers.push(user);
     }
     writeLocalFile("users", this.cachedUsers);
+
+    if (useFirebase && firestoreDb) {
+      setDoc(doc(firestoreDb, "users", user.id), user).catch(error => {
+        handleFirestoreError(error, OperationType.WRITE, `users/${user.id}`);
+      });
+    }
+
     if (this.useGoogleSheets) this.syncToSheets();
   }
 
   public deleteUser(id: string) {
     this.cachedUsers = this.cachedUsers.filter(u => u.id !== id);
     writeLocalFile("users", this.cachedUsers);
+
+    if (useFirebase && firestoreDb) {
+      deleteDoc(doc(firestoreDb, "users", id)).catch(error => {
+        handleFirestoreError(error, OperationType.DELETE, `users/${id}`);
+      });
+    }
+
     if (this.useGoogleSheets) this.syncToSheets();
   }
 
@@ -578,6 +802,13 @@ class GoogleSheetsDatabase {
       this.cachedCourses.push(course);
     }
     writeLocalFile("courses", this.cachedCourses);
+
+    if (useFirebase && firestoreDb) {
+      setDoc(doc(firestoreDb, "courses", course.id), course).catch(error => {
+        handleFirestoreError(error, OperationType.WRITE, `courses/${course.id}`);
+      });
+    }
+
     if (this.useGoogleSheets) this.syncToSheets();
   }
 
@@ -586,6 +817,13 @@ class GoogleSheetsDatabase {
     this.cachedLessons = this.cachedLessons.filter(l => l.course_id !== id); // Cascade
     writeLocalFile("courses", this.cachedCourses);
     writeLocalFile("lessons", this.cachedLessons);
+
+    if (useFirebase && firestoreDb) {
+      deleteDoc(doc(firestoreDb, "courses", id)).catch(error => {
+        handleFirestoreError(error, OperationType.DELETE, `courses/${id}`);
+      });
+    }
+
     if (this.useGoogleSheets) this.syncToSheets();
   }
 
@@ -602,12 +840,26 @@ class GoogleSheetsDatabase {
       this.cachedLessons.push(lesson);
     }
     writeLocalFile("lessons", this.cachedLessons);
+
+    if (useFirebase && firestoreDb) {
+      setDoc(doc(firestoreDb, "lessons", lesson.id), lesson).catch(error => {
+        handleFirestoreError(error, OperationType.WRITE, `lessons/${lesson.id}`);
+      });
+    }
+
     if (this.useGoogleSheets) this.syncToSheets();
   }
 
   public deleteLesson(id: string) {
     this.cachedLessons = this.cachedLessons.filter(l => l.id !== id);
     writeLocalFile("lessons", this.cachedLessons);
+
+    if (useFirebase && firestoreDb) {
+      deleteDoc(doc(firestoreDb, "lessons", id)).catch(error => {
+        handleFirestoreError(error, OperationType.DELETE, `lessons/${id}`);
+      });
+    }
+
     if (this.useGoogleSheets) this.syncToSheets();
   }
 
@@ -624,6 +876,13 @@ class GoogleSheetsDatabase {
       this.cachedOrders.push(order);
     }
     writeLocalFile("orders", this.cachedOrders);
+
+    if (useFirebase && firestoreDb) {
+      setDoc(doc(firestoreDb, "orders", order.id), order).catch(error => {
+        handleFirestoreError(error, OperationType.WRITE, `orders/${order.id}`);
+      });
+    }
+
     if (this.useGoogleSheets) this.syncToSheets();
   }
 
@@ -640,6 +899,13 @@ class GoogleSheetsDatabase {
       this.cachedPayments.push(payment);
     }
     writeLocalFile("payments", this.cachedPayments);
+
+    if (useFirebase && firestoreDb) {
+      setDoc(doc(firestoreDb, "payments", payment.id), payment).catch(error => {
+        handleFirestoreError(error, OperationType.WRITE, `payments/${payment.id}`);
+      });
+    }
+
     if (this.useGoogleSheets) this.syncToSheets();
   }
 
@@ -651,6 +917,12 @@ class GoogleSheetsDatabase {
   public saveSettings(settings: SystemSettings) {
     this.cachedSettings = settings;
     writeLocalFile("settings", this.cachedSettings);
+
+    if (useFirebase && firestoreDb) {
+      setDoc(doc(firestoreDb, "settings", "system"), settings).catch(error => {
+        handleFirestoreError(error, OperationType.WRITE, "settings/system");
+      });
+    }
   }
 }
 

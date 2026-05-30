@@ -52,46 +52,47 @@ export default function Home({ courses, lang, onNavigate, onSelectCourse, theme 
   ];
 
   return (
-    <div className="space-y-16 animate-fade-in">
+    <div className="space-y-10 sm:space-y-16 animate-fade-in px-1 sm:px-0">
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl bg-radial from-slate-900 via-indigo-950 to-slate-950 p-8 sm:p-12 text-white border border-slate-800 shadow-2xl">
+      <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-radial from-slate-900 via-indigo-950 to-slate-950 p-5 sm:p-12 text-white border border-slate-800/80 shadow-2xl">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="relative max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+        <div className="relative max-w-3xl space-y-4 sm:space-y-6">
+          <div className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[10px] sm:text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 backdrop-blur-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
             {lang === "en" ? "🎓 No.1 localized skills academy in Cambodia" : "🎓 វិទ្យាស្ថានបណ្តុះបណ្តាលបច្ចេកវិទ្យាលេខ១ ក្នុងប្រទេសកម្ពុជា"}
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight leading-tight md:leading-none">
             {lang === "en" ? "Unlocking Potential with " : "ស្ថាបនាអនាគតរបស់អ្នកជាមួយ "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-emerald-300">
               {lang === "en" ? "Modern Digital Skills" : "ជំនាញបច្ចេកវិទ្យាទំនើបបំផុត"}
             </span>
           </h1>
 
-          <p className="text-lg text-slate-300 max-w-2xl font-light">
+          <p className="text-xs sm:text-sm md:text-lg text-slate-300 max-w-2xl font-light leading-relaxed">
             {t("tagline")}. {lang === "en" 
               ? "Master high-paying coding & marketing frameworks taught in Khmer. Buy courses securely via ABA PayWay, earn micro-study points, and receive international-grade certificates instantly."
               : "រៀនជំនាញកូដ ទីផ្សារ គណនាទិន្នន័យ និងផលិតមាតិកាជាមួយគ្រូជំនាញច្បាស់លាស់។ ទូទាត់រហ័សតាមធនាគារក្នុងស្រុក មានប្រព័ន្ធវាយពិន្ទុ និងទទួលបានវិញ្ញាបនបត្របញ្ជាក់ការសិក្សាភ្លាមៗ។"}
           </p>
 
-          <div className="flex flex-wrap gap-4 pt-4">
+          <div className="flex flex-wrap gap-2.5 sm:gap-4 pt-2">
             <button
               onClick={() => onNavigate("courses")}
-              className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-indigo-500 to-indigo-650 hover:from-indigo-650 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/20 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
             >
-              <BookOpen className="w-5 h-5" />
+              <BookOpen className="w-4 h-4" />
               {lang === "en" ? "Explore Courses" : "ស្វែងរកវគ្គសិក្សាទាំងអស់"}
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => onNavigate("about")}
-              className="px-6 py-3 rounded-xl font-semibold bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 transition-all hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
             >
-              <HelpCircle className="w-5 h-5" />
+              <HelpCircle className="w-4 h-4 text-indigo-400" />
               {lang === "en" ? "How LMS Works" : "អំពីរបៀបសិក្សា"}
             </button>
           </div>
@@ -99,20 +100,20 @@ export default function Home({ courses, lang, onNavigate, onSelectCourse, theme 
       </section>
 
       {/* Statistics Section */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 z-10 relative">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 z-10 relative">
         {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <div key={i} className={`p-6 rounded-2xl transition-transform hover:scale-[1.02] shadow-sm ${
-              theme === 'dark' ? 'glass-card text-white border-white/10' : 'glass-card-light'
+            <div key={i} className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl transition-all duration-200 hover:scale-[1.01] hover:shadow-md border ${
+              theme === 'dark' ? 'glass-card text-white border-white/10' : 'glass-card-light border-slate-100/80 bg-white'
             }`}>
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-xl ${stat.color}`}>
-                  <Icon className="w-6 h-6" />
+              <div className="flex items-center gap-2.5 sm:gap-4">
+                <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl shrink-0 flex items-center justify-center ${stat.color}`}>
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <div className="text-2xl sm:text-3xl font-extrabold tracking-tight">{stat.value}</div>
-                  <div className="text-xs sm:text-sm text-slate-500 mt-0.5">{stat.label}</div>
+                <div className="min-w-0">
+                  <div className="text-base sm:text-2xl md:text-3xl font-black tracking-tight truncate">{stat.value}</div>
+                  <div className="text-[10px] sm:text-xs md:text-sm text-slate-500 mt-0.5 truncate font-medium">{stat.label}</div>
                 </div>
               </div>
             </div>
@@ -120,33 +121,33 @@ export default function Home({ courses, lang, onNavigate, onSelectCourse, theme 
         })}
       </section>
 
-      {/* Categories Grid */}
-      <section className="space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+      {/* Popular Categories Section */}
+      <section className="space-y-4 sm:space-y-6">
+        <div className="space-y-1 sm:space-y-2">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
             {lang === "en" ? "Popular Categories" : "មុខជំនាញពេញនិយមបំផុត"}
           </h2>
-          <p className="text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500">
             {lang === "en" ? "Hand Picked career specializations for maximum job options." : "វគ្គសិក្សាកែសម្រួលពិសេសសម្រាប់តម្រូវការការងារក្នុងទីផ្សារបច្ចុប្បន្ន"}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 relative z-10">
           {categories.map((cat, i) => (
             <div
               key={i}
               onClick={() => onNavigate("courses")}
-              className={`p-6 rounded-2xl transition-all cursor-pointer group shadow-sm hover:scale-[1.02] ${
+              className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl transition-all cursor-pointer group shadow-sm hover:scale-[1.01] hover:shadow-md border ${
                 theme === 'dark' 
                   ? 'glass-card bg-gradient-to-br from-indigo-500/10 to-transparent border-white/10 text-white' 
-                  : 'glass-card-light bg-gradient-to-br from-indigo-50/40 to-transparent'
+                  : 'glass-card-light bg-gradient-to-br from-indigo-50/40 to-transparent border-slate-100 bg-white'
               }`}
             >
-              <h3 className="text-lg font-bold group-hover:text-indigo-500 transition-colors">{cat.title}</h3>
-              <div className="mt-8 flex items-center justify-between">
-                <span className="text-xs font-mono font-medium opacity-80">{cat.count} {t("courses")}</span>
+              <h3 className="text-sm sm:text-base md:text-lg font-bold group-hover:text-indigo-500 transition-colors">{cat.title}</h3>
+              <div className="mt-4 sm:mt-8 flex items-center justify-between">
+                <span className="text-[10px] sm:text-xs font-mono font-medium opacity-80">{cat.count} {t("courses")}</span>
                 <span className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </div>
             </div>
@@ -257,7 +258,7 @@ export default function Home({ courses, lang, onNavigate, onSelectCourse, theme 
             {lang === "en" ? "Validated Student Reviews" : "មតិយោបល់ពិតពីសិស្សានុសិស្ស"}
           </h2>
           <p className="text-slate-500 max-w-xl mx-auto">
-            {lang === "en" ? "Read how Sabai Academy learners transform their professional careers across local agencies." : "ស្ដាប់សម្តីសិស្សដែលទទួលបានអាហារូបករណ៍ ឬការងារល្អៗបន្ទាប់ពីសិក្សាចប់"}
+            {lang === "en" ? "Read how PRO DIGITAL learners transform their professional careers across local agencies." : "ស្ដាប់សម្តីសិស្សដែលទទួលបានអាហារូបករណ៍ ឬការងារល្អៗបន្ទាប់ពីសិក្សាចប់"}
           </p>
         </div>
 

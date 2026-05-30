@@ -70,6 +70,8 @@ export interface PaymentTransaction {
   user_name?: string;
   user_email?: string;
   course_title?: string;
+  course_id?: string;
+  referral_code?: string;
   created_at?: string;
 }
 

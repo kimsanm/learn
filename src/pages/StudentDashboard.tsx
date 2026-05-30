@@ -35,7 +35,7 @@ export default function StudentDashboard({ unlockedCourses, allLessons, currentU
   // Subtitles content structure
   const dummySubtitles: Record<string, { en: string; kh: string }[]> = {
     "welcome": [
-      { en: "Welcome back to Sabai Academy E-Learning Platform.", kh: "សូមស្វាគមន៍មកកាន់ប្រព័ន្ធសិក្សា សាបាយ អាខាដឺមី។" },
+      { en: "Welcome back to PRO DIGITAL E-Learning Platform.", kh: "សូមស្វាគមន៍មកកាន់ប្រព័ន្ធសិក្សា ប្រូ ឌីជីថល (PRO DIGITAL)។" },
       { en: "In this session, we investigate major tech standards and layouts.", kh: "មេរៀននេះ យើងនឹងស្វែងយល់ពីប្លង់បច្ចេកវិទ្យា និងស្តង់ដារកូដ។" },
       { en: "Make sure to answer the lesson quiz to earn points.", kh: "សូមកុំភ្លេចធ្វើតេស្តវាស់ស្ទង់សមត្ថភាព ដើម្បីទទួលបានពិន្ទុសន្សំ។" },
     ]

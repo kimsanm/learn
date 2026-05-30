@@ -35,7 +35,7 @@ export default function CourseDetail({ courseDetails, currentUser, lang, onBack,
 
   // Handles Coupon application
   const handleApplyCoupon = () => {
-    if (coupon.toUpperCase() === "SABAI20" || coupon.toUpperCase() === "SABAI") {
+    if (coupon.toUpperCase() === "PRO20" || coupon.toUpperCase() === "PRO" || coupon.toUpperCase() === "SABAI20" || coupon.toUpperCase() === "SABAI") {
       setCouponApplied(true);
       setDiscountPercent(20);
       setOrderMessage(t("couponApplied"));
@@ -279,7 +279,7 @@ export default function CourseDetail({ courseDetails, currentUser, lang, onBack,
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="SABAI20"
+                  placeholder="PRO20"
                   value={coupon}
                   onChange={(e) => setCoupon(e.target.value)}
                   disabled={couponApplied}
